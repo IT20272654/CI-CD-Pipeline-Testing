@@ -1,0 +1,24 @@
+name: Create Folder in Root
+
+on:
+  push:
+    branches:
+      - main  # Change this to your deployment branch if needed
+
+jobs:
+  create-folder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH Key and Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
+
+      - name: Create "HelloWorld" Folder in Root
+        run: |
+          ssh -tt -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+            sudo mkdir -p /HelloWorld
+          EOF
