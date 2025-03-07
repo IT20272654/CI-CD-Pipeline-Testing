@@ -22,5 +22,5 @@ jobs:
       - name: Create "HelloWorld" Folder in Root
         run: |
           ssh -v -tt -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-            sudo mkdir -p HelloWorld
+            echo "SSH connection successful! Hello from the remote server."
           EOF
