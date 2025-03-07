@@ -15,10 +15,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
       - name: Create "HelloWorld" Folder in Root
         run: |
-          ssh -tt -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+          ssh -v -tt -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
             sudo mkdir -p /HelloWorld
           EOF
