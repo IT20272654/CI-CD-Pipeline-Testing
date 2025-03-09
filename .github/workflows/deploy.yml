@@ -3,7 +3,7 @@ name: Create Folder in Root
 on:
   push:
     branches:
-      - main  # Change this to your deployment branch if needed.
+      - main  
 
 jobs:
   create-folder:
