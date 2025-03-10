@@ -19,12 +19,10 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Deploy
+      - name: Create "HelloWorld" Folder in Root
         run: |
           ssh -v -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-            cd ~/SecurePass/Secure-Pass-AI-User-App
-            chmod +x deploy.sh
-            ./deploy.sh
+             echo "SSH connection successful! Hello from the remote server."
           EOF
 
 
