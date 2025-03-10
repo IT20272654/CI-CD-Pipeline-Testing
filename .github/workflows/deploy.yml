@@ -1,4 +1,4 @@
-name: Create Folder in Root
+name: Deploy Application
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main  
 
 jobs:
-  create-folder:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,11 +19,43 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Create "HelloWorld" Folder in Root
+      - name: Deploy Application via SSH
         run: |
-          ssh -v -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-             echo "SSH connection successful! Hello from the remote server."
+          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+            cd ~/SecurePass/Secure-Pass-User-App/Secure-Pass-AI-User-App
+            docker compose down
+            docker compose up -d --build
           EOF
+
+
+
+
+# name: Create Folder in Root
+
+# on:
+#   push:
+#     branches:
+#       - main  
+
+# jobs:
+#   create-folder:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Setup SSH Key and Known Hosts
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+#           chmod 600 ~/.ssh/deploy_key
+#           eval $(ssh-agent -s)
+#           ssh-add ~/.ssh/deploy_key
+#           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
+
+#       - name: Create "HelloWorld" Folder in Root
+#         run: |
+#           ssh -v -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+#              echo "SSH connection successful! Hello from the remote server."
+#           EOF
 
 
 
