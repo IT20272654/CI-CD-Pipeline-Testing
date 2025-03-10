@@ -26,7 +26,7 @@ jobs:
             git pull https://$GITHUB_TOKEN@github.com/SLTDigitalLab/Secure-Pass-AI-User-App.git
           EOF
         env:
-          GITHUB_TOKEN: ${{ secrets.access_token }}
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
       - name: Run deploy.sh Script
         run: |
