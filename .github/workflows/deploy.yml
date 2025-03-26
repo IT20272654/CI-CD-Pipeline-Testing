@@ -1,26 +1,27 @@
-name: Deploy User Application
+name: Deploy Application
 
 on:
   push:
     branches:
-      - main  
+    - Testing
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Setup SSH Key and Known Hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/deploy_key
-          ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_host
 
-      - name: Deploy Application via SSH
-        run: |
-          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-            echo "SSH connection successful! Hello from the remote server."
+    steps:
+    - name: Setup SSH Key and Known Hosts
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        eval $(ssh-agent -s)
+        ssh-add ~/.ssh/deploy_key
+        ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
+
+    - name: Deploy Application via SSH
+      run: |
+        ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+          echo "SSH connection successful! Hello from the remote server."
           EOF
