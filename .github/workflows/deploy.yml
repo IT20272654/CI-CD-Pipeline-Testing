@@ -1,12 +1,12 @@
-name: Deploy Application
+name: Test Repo Clone
 
 on:
   push:
     branches:
-      - Testing
+      - Testingsabcd
 
 jobs:
-  deploy:
+  clone-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,24 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Deploy Application via SSH
+      - name: SSH into Server and Clone Repo into 'Testing' Folder
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-          echo "SSH connection successful! Hello from the remote server."
+            echo " SSH connection successful."
+
+            # Set target directory
+            TARGET_DIR=~/Testing
+
+            # If folder doesn't exist, create and clone
+            if [ ! -d "$TARGET_DIR" ]; then
+              echo "'Testing' folder not found. Creating and cloning..."
+              mkdir -p "$TARGET_DIR"
+              git clone https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com/IT20272654/CI-CD-Pipeline-Testing.git "$TARGET_DIR"
+            else
+              echo "'Testing' folder exists. Pulling latest changes..."
+              cd "$TARGET_DIR"
+              git pull
+            fi
+
+            echo "Operation complete."
           EOF
