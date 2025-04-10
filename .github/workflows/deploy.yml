@@ -32,9 +32,9 @@ jobs:
             # If folder doesn't exist, create and clone
             if [ ! -d "$TARGET_DIR" ]; then
               echo "'Testing' folder not found. Creating and cloning..."
+              rm -rf "$TARGET_DIR"
               mkdir -p "$TARGET_DIR"
-              git clone https://${ACCESS_TOKEN}@github.com:IT20272654/CI-CD-Pipeline-Testing.git "$TARGET_DIR"
-
+              git clone https://x-access-token:$ACCESS_TOKEN@github.com/IT20272654/CI-CD-Pipeline-Testing.git "$TARGET_DIR"
             else
               echo "'Testing' folder exists. Pulling latest changes..."
               cd "$TARGET_DIR"
