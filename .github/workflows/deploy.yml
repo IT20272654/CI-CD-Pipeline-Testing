@@ -24,22 +24,32 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << EOF
-            echo " SSH connection successful."
+            echo "SSH connection successful."
 
             # Set target directory
             TARGET_DIR=~/Testing
 
-            # If folder doesn't exist, create and clone
+            # Check if the directory exists
             if [ ! -d "$TARGET_DIR" ]; then
               echo "'Testing' folder not found. Creating and cloning..."
-              rm -rf "$TARGET_DIR"
               mkdir -p "$TARGET_DIR"
               git clone https://x-access-token:$ACCESS_TOKEN@github.com/IT20272654/CI-CD-Pipeline-Testing.git "$TARGET_DIR"
+              CLONE_STATUS=$?
+              if [ $CLONE_STATUS -ne 0 ]; then
+                echo "Git clone failed with status $CLONE_STATUS"
+                exit $CLONE_STATUS
+              fi
             else
               echo "'Testing' folder exists. Pulling latest changes..."
               cd "$TARGET_DIR"
               git pull
+              PULL_STATUS=$?
+              if [ $PULL_STATUS -ne 0 ]; then
+                echo "Git pull failed with status $PULL_STATUS"
+                exit $PULL_STATUS
+              fi
             fi
 
             echo "Operation complete."
           EOF
+
