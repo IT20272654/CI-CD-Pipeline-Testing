@@ -42,7 +42,7 @@ jobs:
             else
               echo "'Testing' folder not found. Creating and cloning..."
               mkdir -p "$TARGET_DIR"
-              git clone https://x-access-token:${ACCESS_TOKEN}@github.com/IT20272654/CI-CD-Pipeline-Testing.git "$TARGET_DIR"
+              git clone https://x-access-token:${ACCESS_TOKEN}@github.com/SLTDigitalLab/Secure-Pass-AI-User-App "$TARGET_DIR"
               cd "$TARGET_DIR"
               git checkout Testing
             fi
