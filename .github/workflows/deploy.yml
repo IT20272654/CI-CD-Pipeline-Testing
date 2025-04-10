@@ -23,7 +23,7 @@ jobs:
         env:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << EOF
             echo " SSH connection successful."
 
             # Set target directory
