@@ -1,51 +1,51 @@
-name: Deploy Application
-
-on:
-  push:
-    branches:
-      - Testing
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
+name: Deploy Application 
+ 
+on: 
+  push: 
+    branches: 
+      - Testing 
+ 
+jobs: 
+  deploy: 
+    runs-on: ubuntu-latest 
+ 
     steps:
-      - name: Setup SSH Key and Known Hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/deploy_key
-          ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
-
-      - name: Deploy Application via SSH
-        env:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-            echo "SSH connection successful!"
-
-            TARGET_DIR=~/Testing
-
-            if [ -d "$TARGET_DIR" ]; then
-              echo "'Testing' folder exists."
-
-              if [ -d "$TARGET_DIR/.git" ]; then
-                echo "Pulling latest changes from GitHub..."
-                cd "$TARGET_DIR"
-                git pull origin Testing
-              else
-                echo "Folder exists but is not a git repo. Exiting..."
-                exit 1
-              fi
-            else
-              echo "'Testing' folder not found. Creating and cloning..."
+      - name: Setup SSH Key and Known Hosts 
+        run: | 
+          mkdir -p ~/.ssh 
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key 
+          chmod 600 ~/.ssh/deploy_key 
+          eval "$(ssh-agent -s)" 
+          ssh-add ~/.ssh/deploy_key 
+          ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts 
+ 
+      - name: Deploy Application via SSH 
+        env: 
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }} 
+        run: | 
+          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF' 
+            echo "SSH connection successful!" 
+ 
+            TARGET_DIR=~/Testing 
+ 
+            if [ -d "$TARGET_DIR" ]; then 
+              echo "'Testing' folder exists." 
+ 
+              if [ -d "$TARGET_DIR/.git" ]; then 
+                echo "Pulling latest changes from GitHub..." 
+                cd "$TARGET_DIR" 
+                git pull origin Testing 
+              else 
+                echo "Folder exists but is not a git repo. Exiting..." 
+                exit 1 
+              fi 
+            else 
+              echo "'Testing' folder not found. Creating and cloning..." 
               mkdir -p "$TARGET_DIR"
-              git clone https://x-access-token:${ACCESS_TOKEN}@github.com/SLTDigitalLab/Secure-Pass-AI-User-App "$TARGET_DIR"
               cd "$TARGET_DIR"
+              git clone https://${ACCESS_TOKEN}@github.com/SLTDigitalLab/Secure-Pass-AI-User-App .
               git checkout Testing
-            fi
-
-            echo "Repository deployment complete."
+            fi 
+ 
+            echo "Repository deployment complete." 
           EOF
