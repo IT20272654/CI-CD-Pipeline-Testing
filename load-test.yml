@@ -1,17 +1,23 @@
 config:
   target: "https://securepass.sltdigitallab.lk"
   phases:
-    - duration: 60          # total duration: 60 seconds
+    - duration: 30          # Ramp-up phase
+      arrivalRate: 5        # 5 new users per second
+    - duration: 60          # Sustained load
       arrivalRate: 10       # 10 new users per second
   defaults:
     headers:
       Content-Type: "application/json"
 
 scenarios:
-  - name: Signin Test
+  - name: "Signin Test"
     flow:
       - post:
           url: "/signin"
           json:
             email: "testuser@example.com"
             password: "password123"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - log: "Logged in with token: {{ authToken }}"
