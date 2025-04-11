@@ -1,0 +1,9 @@
+config:
+  target: 'https://your-deployed-app.com'
+  phases:
+    - duration: 30
+      arrivalRate: 5
+scenarios:
+  - flow:
+      - get:
+          url: "/api/health"
