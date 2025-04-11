@@ -1,9 +1,17 @@
 config:
-  target: 'https://your-deployed-app.com'
+  target: "https://securepass.sltdigitallab.lk"
   phases:
-    - duration: 30
-      arrivalRate: 5
+    - duration: 60          # total duration: 60 seconds
+      arrivalRate: 10       # 10 new users per second
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
 scenarios:
-  - flow:
-      - get:
-          url: "/api/health"
+  - name: Signin Test
+    flow:
+      - post:
+          url: "/signin"
+          json:
+            email: "testuser@example.com"
+            password: "password123"
