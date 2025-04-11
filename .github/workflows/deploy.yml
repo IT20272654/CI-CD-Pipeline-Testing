@@ -1,15 +1,18 @@
-name: Deploy Application
+name: Deploy User Application
 
 on:
   push:
     branches:
-      - main
+      - abc  
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
       - name: Setup SSH Key and Known Hosts
         run: |
           mkdir -p ~/.ssh
@@ -22,5 +25,15 @@ jobs:
       - name: Deploy Application via SSH
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-          echo "SSH connection successful! Hello from the remote server."
+            cd ~/SecurePass/Secure-Pass-User-App/Secure-Pass-AI-User-App
+            git pull
+            docker compose down
+            docker compose up -d --build
           EOF
+
+      - name: Install Artillery
+        run: npm install -g artillery
+
+      - name: Run Artillery Test
+        run: |
+          artillery run load-test.yml
