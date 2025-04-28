@@ -24,7 +24,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
             set -e # if any command fails, exit immediately
             echo "Connected to Server"
-            cd ~/Testing/Secure-Pass-Admin-App
+            cd ~/Testing/Secure-Pass-AI-Admin-App
 
             echo "Moving into backend directory..."
             cd backend
