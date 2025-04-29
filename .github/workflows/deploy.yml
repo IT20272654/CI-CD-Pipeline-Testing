@@ -1,13 +1,36 @@
-name: Deploy Application
+name: Test and Deploy Admin Application
 
 on:
   push:
     branches:
-      - test123
+      - Testing-4
 
 jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Run Backend Unit Tests
+        run: |
+          cd backend
+          npm test
+
   deploy:
     runs-on: ubuntu-latest
+    needs: test-backend  # Only run if tests passed
 
     steps:
       - name: Setup SSH Key and Known Hosts
@@ -19,8 +42,7 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Deploy Application via SSH
+      - name: Notify Server that Code is Ready (Optional)
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-          echo "SSH connection successful! Hello from the remote server."
-          EOF
+            echo "Tests passed on Git
