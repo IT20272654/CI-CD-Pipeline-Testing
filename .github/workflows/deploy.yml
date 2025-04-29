@@ -1,9 +1,9 @@
-name: Deploy Application
+name: Deploy Admin Application
 
 on:
   push:
     branches:
-      - main
+      - main # Change this to the correct admin app branch
 
 jobs:
   deploy:
@@ -19,8 +19,11 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Deploy Application via SSH
+      - name: Deploy Admin Application via SSH
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-          echo "SSH connection successful! Hello from the remote server."
+            cd ~/SecurePass/Secure-Pass-Admin-App/Secure-Pass-AI-Admin-App
+            git pull
+            docker compose down
+            docker compose up -d --build
           EOF
