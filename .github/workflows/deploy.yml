@@ -1,9 +1,9 @@
-name: Deploy Admin Application
+name: Deploy Application
 
 on:
   push:
     branches:
-      - testing123 # Change this to the correct admin app branch
+      - test123
 
 jobs:
   deploy:
@@ -19,7 +19,8 @@ jobs:
           ssh-add ~/.ssh/deploy_key
           ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
 
-      - name: Deploy Admin Application via SSH
+      - name: Deploy Application via SSH
         run: |
           ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
+          echo "SSH connection successful! Hello from the remote server."
           EOF
