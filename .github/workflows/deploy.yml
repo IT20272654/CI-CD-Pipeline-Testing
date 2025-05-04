@@ -2,7 +2,7 @@ name: Test Admin Application Backend
 on:
   push:
     branches:
-      - Testing-5
+      - Testing-4
 jobs:
   test-backend:
     runs-on: ubuntu-latest
@@ -23,14 +23,4 @@ jobs:
       - name: Run Backend Unit Tests
         run: |
           cd backend
-          npm test -- --forceExit
-          
-      - name: Check Controllers for Issues
-        run: |
-          cd backend
-          # Add commands to check controller issues
-          echo "Checking controllers for issues..."
-          # Example: Run linting on controllers directory
-          npx eslint ./controllers/ || echo "Controller issues found!"
-          # Example: Check for specific patterns in controller files
-          grep -r "TODO\|FIXME" ./controllers/ || echo "No TODOs or FIXMEs found in controllers"
+          npm test
