@@ -1,42 +1,33 @@
 name: Test and Deploy Admin Application (Backend Only)
-
 on:
   push:
     branches:
       - Testing-5
-
 jobs:
   test-backend:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'npm'  # Caches node_modules for faster subsequent runs
-
       - name: Install Backend Dependencies
         run: |
           cd backend
-          npm ci  # Clean install using package-lock.json
-
+          npm install
       - name: Run Backend Unit Tests
         run: |
           cd backend
           npm test -- --forceExit --detectOpenHandles
-
   deploy:
     runs-on: ubuntu-latest
     needs: test-backend  # Only deploy if tests pass
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -44,7 +35,6 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-
       - name: Deploy to Server
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
