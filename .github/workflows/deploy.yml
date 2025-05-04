@@ -1,43 +1,52 @@
-name: Test and Deploy Admin Application
+name: Test and Deploy Admin Application (Backend Only)
+
 on:
   push:
     branches:
       - Testing-5
+
 jobs:
   test-backend:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'  # Caches node_modules for faster subsequent runs
+
       - name: Install Backend Dependencies
         run: |
           cd backend
-          npm install
+          npm ci  # Clean install using package-lock.json
+
       - name: Run Backend Unit Tests
         run: |
           cd backend
-          npm test -- --detectOpenHandles --forceExit
-          
+          npm test -- --forceExit --detectOpenHandles
+
   deploy:
     runs-on: ubuntu-latest
-    needs: test-backend  
+    needs: test-backend  # Only deploy if tests pass
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Setup SSH Key and Known Hosts
+
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/deploy_key
-          ssh-keyscan -H 178.128.20.26 >> ~/.ssh/known_hosts
-      - name: Notify Server that Code is Ready
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy to Server
         run: |
-          ssh -i ~/.ssh/deploy_key root@178.128.20.26 << 'EOF'
-            echo "Tests passed on Git"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            echo "Testing completed successfully"
           EOF
