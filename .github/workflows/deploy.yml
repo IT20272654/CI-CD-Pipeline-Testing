@@ -20,7 +20,21 @@ jobs:
           cd backend
           npm install
       
+      - name: Setup Test Environment
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "JEST_TIMEOUT=30000" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+      
       - name: Run Backend Unit Tests
         run: |
           cd backend
-          npm test
+          npm test -- --testPathPattern='unit' --detectOpenHandles --forceExit
+        env:
+          NODE_ENV: test
+          EMAIL_HOST: smtp.example.com
+          EMAIL_PORT: 587
+          EMAIL_USER: test@example.com
+          EMAIL_PASSWORD: testpassword
+          JWT_SECRET: testsecret
+          MONGO_URI: mongodb://localhost:27017/testdb
