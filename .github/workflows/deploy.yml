@@ -2,7 +2,7 @@ name: Test Admin Application Backend
 on:
   push:
     branches:
-      - Testing-6
+      - Testing-4
 jobs:
   test-backend:
     runs-on: ubuntu-latest
@@ -23,4 +23,12 @@ jobs:
       - name: Run Backend Unit Tests
         run: |
           cd backend
-          npm test -- --forceExit
+          npm test -- --detectOpenHandles --runInBand
+        continue-on-error: true
+        
+      - name: Check Test Results
+        run: |
+          cd backend
+          echo "Running tests with different configuration to troubleshoot failures"
+          npm test -- --detectOpenHandles --runInBand --verbose
+        if: always()
