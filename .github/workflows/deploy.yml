@@ -24,7 +24,7 @@ jobs:
         id: run-tests
         run: |
           cd backend
-          npm test -- --detectOpenHandles --forceExit --runInBand
+          npm test
         continue-on-error: true
         
       - name: Check Test Results
@@ -34,3 +34,8 @@ jobs:
           echo "Test status: ${{ steps.run-tests.outcome }}"
           echo "Tests completed, proceeding with workflow regardless of test outcome"
           
+      - name: Additional Steps
+        if: always()
+        run: |
+          echo "Workflow continues here with additional steps..."
+          # Add any additional steps you need to run after tests
