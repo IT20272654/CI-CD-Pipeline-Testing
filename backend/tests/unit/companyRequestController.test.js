@@ -7,7 +7,7 @@ const CompanyRequest = require('../../models/CompanyRequest');
 const Company = require('../../models/Company');
 const AdminUser = require('../../models/AdminUser');
 const bcrypt = require('bcrypt');
-
+//test
 jest.mock('../../models/CompanyRequest');
 jest.mock('../../models/Company');
 jest.mock('../../models/AdminUser');
