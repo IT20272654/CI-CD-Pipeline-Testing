@@ -7,6 +7,7 @@ jest.mock('../../models/AdminUser');
 
 describe('Message Controller', () => {
   let req, res;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     req = {
@@ -16,6 +17,13 @@ describe('Message Controller', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
+    // Spy on console.error before each test
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console.error after each test
+    consoleErrorSpy.mockRestore();
   });
 
   describe('getMessagesByCompanyId', () => {
@@ -66,12 +74,24 @@ describe('Message Controller', () => {
     });
 
     it('should handle database errors', async () => {
+      const dbError = new Error('Database error');
+      const mockAdminUser = {
+        company: { _id: 'companyId' }
+      };
+      
       AdminUser.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockRejectedValue(new Error('Database error'))
+        populate: jest.fn().mockResolvedValue(mockAdminUser)
+      });
+
+      ContactUs.find = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          sort: jest.fn().mockRejectedValue(dbError)
+        })
       });
 
       await getMessagesByCompanyId(req, res);
 
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching messages:', dbError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ 
         error: "Failed to fetch messages" 
