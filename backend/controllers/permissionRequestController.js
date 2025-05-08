@@ -184,15 +184,19 @@ const approvePermissionRequest = async (req, res) => {
     // Send email to user
     setImmediate(async () => {
       try {
-        await sendPermissionEmail(user.email, {
-          doorCode: doorInfo.doorCode,
-          roomName: doorInfo.roomName,
-          location: doorInfo.location,
-          date: savedRequest.date,
-          inTime: savedRequest.inTime,
-          outTime: savedRequest.outTime,
-          message: savedRequest.message
-        });
+        // Create a doorData object with all required properties
+        const doorData = {
+          doorCode: request.door.doorCode,
+          roomName: request.door.roomName,
+          location: request.door.location,
+          date: request.date,
+          inTime: request.inTime,
+          outTime: request.outTime,
+          message: request.message
+        };
+        
+        // Use doorData instead of doorInfo
+        await sendPermissionEmail(request.user.email, doorData);
       } catch (error) {
         console.error('Error sending permission email:', error);
       }
