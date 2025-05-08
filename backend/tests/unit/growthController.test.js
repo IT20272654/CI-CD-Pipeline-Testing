@@ -9,6 +9,7 @@ jest.mock('../../models/Door');
 
 describe('Growth Controller', () => {
   let req, res;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     req = {};
@@ -16,6 +17,13 @@ describe('Growth Controller', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
+    // Spy on console.error before each test
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console.error after each test
+    consoleErrorSpy.mockRestore();
   });
 
   describe('getUserGrowthData', () => {
@@ -34,10 +42,12 @@ describe('Growth Controller', () => {
     });
 
     it('should handle errors properly', async () => {
-      User.aggregate = jest.fn().mockRejectedValue(new Error('Database error'));
+      const dbError = new Error('Database error');
+      User.aggregate = jest.fn().mockRejectedValue(dbError);
 
       await getUserGrowthData(req, res);
 
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching user growth data:', dbError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: 'Error fetching user growth data' });
     });
@@ -56,6 +66,17 @@ describe('Growth Controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(mockGrowthData);
+    });
+
+    it('should handle errors properly', async () => {
+      const dbError = new Error('Database error');
+      Company.aggregate = jest.fn().mockRejectedValue(dbError);
+
+      await getCompanyGrowthData(req, res);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching company growth data:', dbError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Error fetching company growth data' });
     });
   });
 });
