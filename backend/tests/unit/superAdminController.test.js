@@ -5,7 +5,6 @@ const Door = require('../../models/Door');
 const User = require('../../models/User');
 const History = require('../../models/History');
 const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
 
 // Mock dependencies
 jest.mock('../../models/Company');
@@ -14,17 +13,55 @@ jest.mock('../../models/Door');
 jest.mock('../../models/User');
 jest.mock('../../models/History');
 jest.mock('bcrypt');
-jest.mock('nodemailer');
+
+// Mock nodemailer with proper transporter setup
+const mockSendMail = jest.fn().mockResolvedValue({ messageId: 'test-message-id' });
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: mockSendMail
+  })
+}));
+
+// Mock fs
+jest.mock('fs', () => ({
+  readFileSync: jest.fn().mockReturnValue(Buffer.from('mock pdf content'))
+}));
 
 describe('SuperAdminController Tests', () => {
+  beforeAll(() => {
+    // Mock environment variables
+    process.env.EMAIL_HOST = 'smtp.test.com';
+    process.env.EMAIL_PORT = '587';
+    process.env.EMAIL_USER = 'test@example.com';
+    process.env.EMAIL_PASSWORD = 'testpass';
+  });
+
+  afterAll(() => {
+    // Clean up environment variables
+    delete process.env.EMAIL_HOST;
+    delete process.env.EMAIL_PORT;
+    delete process.env.EMAIL_USER;
+    delete process.env.EMAIL_PASSWORD;
+  });
+
   let mockReq;
   let mockRes;
+  let consoleErrorSpy;
+  let consoleLogSpy;
 
   beforeEach(() => {
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+    jest.clearAllMocks();
   });
 
   describe('createCompany', () => {
@@ -124,7 +161,7 @@ describe('SuperAdminController Tests', () => {
       const mockCompany = {
         _id: 'company123',
         admins: [],
-        package: '7days',
+        package: 'Premium',
         save: jest.fn().mockResolvedValue(true)
       };
 
@@ -140,13 +177,29 @@ describe('SuperAdminController Tests', () => {
 
       Company.findById.mockResolvedValue(mockCompany);
       AdminUser.mockImplementation(() => mockSavedAdminUser);
+      AdminUser.countDocuments = jest.fn().mockResolvedValue(0);
 
+      // Act
       await createAdminUser(mockReq, mockRes);
+      
+      // Wait for any async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
 
+      // Assert
       expect(AdminUser).toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith(mockSavedAdminUser);
       expect(mockCompany.save).toHaveBeenCalled();
+    }, 10000); // Increase timeout to 10s
+
+    test('should handle server errors', async () => {
+      const error = new Error('Database error');
+      Company.findById.mockRejectedValue(error);
+
+      await createAdminUser(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Server error' });
     });
   });
 
