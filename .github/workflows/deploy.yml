@@ -2,7 +2,7 @@ name: Test Admin Application Backend
 on:
   push:
     branches:
-      - Testing-123
+      - Testing-7
 jobs:
   test-backend:
     runs-on: ubuntu-latest
