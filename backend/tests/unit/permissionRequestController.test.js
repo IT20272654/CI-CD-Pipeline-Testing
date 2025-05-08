@@ -30,31 +30,70 @@ describe('Permission Request Controller', () => {
 
   describe('makePermissionRequest', () => {
     it('should create permission request successfully', async () => {
-      const mockSavedRequest = {
-        _id: 'requestId',
-        userId: 'testUserId',
-        doorId: 'testDoorId',
-        reason: 'Test reason',
-        status: 'Pending'
+      const mockUser = {
+        _id: 'testUserId',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        company: { _id: 'companyId' },
+        pendingRequests: [],
+        doorAccess: [],
+        save: jest.fn().mockResolvedValue(true)
       };
 
-      // Mock User and Door existence checks
-      User.findById = jest.fn().mockResolvedValueOnce({ _id: 'testUserId' });
-      Door.findById = jest.fn().mockResolvedValueOnce({ _id: 'testDoorId' });
+      const mockDoor = {
+        _id: 'testDoorId',
+        doorCode: 'DOOR123',
+        roomName: 'Test Room',
+        location: 'Test Location',
+        company: { _id: 'companyId' }
+      };
 
-      // Setup PermissionRequest mock with save method
+      req.body = {
+        user: 'testUserId',
+        door: 'testDoorId',
+        date: '2025-05-07',
+        inTime: '09:00',
+        outTime: '17:00',
+        message: 'Test request'
+      };
+
+      // Mock User.findById chain
+      User.findById = jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockUser)
+      });
+
+      // Mock Door.findById chain
+      Door.findById = jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockDoor)
+      });
+
+      // Mock PermissionRequest save
+      const mockSavedRequest = {
+        _id: 'requestId',
+        date: new Date('2025-05-07'),
+        inTime: '09:00',
+        outTime: '17:00',
+        message: 'Test request',
+        status: 'Approved'
+      };
+
       const mockRequest = {
         ...mockSavedRequest,
-        save: jest.fn().mockResolvedValueOnce(mockSavedRequest)
+        save: jest.fn().mockResolvedValue(mockSavedRequest)
       };
       PermissionRequest.mockImplementation(() => mockRequest);
 
       await makePermissionRequest(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Error making permission request"
-      });
+      expect(User.findById).toHaveBeenCalledWith('testUserId');
+      expect(Door.findById).toHaveBeenCalledWith('testDoorId');
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        door: 'DOOR123',
+        roomName: 'Test Room',
+        location: 'Test Location'
+      }));
     });
   });
 
@@ -69,7 +108,7 @@ describe('Permission Request Controller', () => {
 
       const mockUser = {
         _id: 'testUserId',
-        email: 'test@example.com',
+        email: 'john@example.com',
         doorAccess: [],
         pendingRequests: ['requestId'],
         save: jest.fn().mockResolvedValue({ success: true })
@@ -77,21 +116,27 @@ describe('Permission Request Controller', () => {
 
       const mockRequest = {
         _id: 'requestId',
-        user: mockUser._id,
+        user: mockUser,
         door: mockDoor,
         inTime: '09:00',
         outTime: '17:00',
-        date: new Date(),
+        date: new Date('2025-05-07'),
+        message: 'Test request',
         status: 'Pending',
         save: jest.fn().mockResolvedValue({
           _id: 'requestId',
           status: 'Approved',
           door: mockDoor,
-          user: mockUser._id
+          user: mockUser,
+          date: new Date('2025-05-07'),
+          inTime: '09:00',
+          outTime: '17:00',
+          message: 'Test request'
         })
       };
 
       PermissionRequest.findById = jest.fn().mockImplementation(() => ({
+        populate: jest.fn().mockReturnThis(),
         populate: jest.fn().mockResolvedValue(mockRequest)
       }));
 
@@ -101,9 +146,28 @@ describe('Permission Request Controller', () => {
 
       Door.findByIdAndUpdate = jest.fn().mockResolvedValue(mockDoor);
 
+      const { sendPermissionEmail } = require('../../controllers/EmailController');
+
       await approvePermissionRequest(req, res);
+      
+      // Wait for any async operations to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       expect(mockRequest.save).toHaveBeenCalled();
+      expect(mockUser.save).toHaveBeenCalled();
+      expect(Door.findByIdAndUpdate).toHaveBeenCalled();
+      expect(sendPermissionEmail).toHaveBeenCalledWith(
+        'john@example.com',
+        expect.objectContaining({
+          doorCode: 'DOOR123',
+          roomName: 'Test Room',
+          location: 'Test Location',
+          date: expect.any(Date),
+          inTime: '09:00',
+          outTime: '17:00',
+          message: 'Test request'
+        })
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalled();
     });
