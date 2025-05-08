@@ -5,6 +5,7 @@ jest.mock('../../models/History');
 
 describe('History Controller', () => {
   let req, res;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     req = {
@@ -14,6 +15,13 @@ describe('History Controller', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
+    // Spy on console.error before each test
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console.error after each test
+    consoleErrorSpy.mockRestore();
   });
 
   describe('getRecentAccessDoors', () => {
@@ -39,12 +47,14 @@ describe('History Controller', () => {
     });
 
     it('should handle errors properly', async () => {
+      const dbError = new Error('Database error');
       History.find = jest.fn().mockImplementation(() => {
-        throw new Error('Database error');
+        throw dbError;
       });
 
       await getRecentAccessDoors(req, res);
 
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching recent access doors:', dbError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ 
         error: 'Error fetching recent access doors' 
