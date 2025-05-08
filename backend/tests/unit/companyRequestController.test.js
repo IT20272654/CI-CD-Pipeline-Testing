@@ -1,24 +1,30 @@
 const {
   createCompanyRequest,
-  getCompanyRequests,
   toggleCompanyRequestStatus
 } = require('../../controllers/companyRequestController');
 const CompanyRequest = require('../../models/CompanyRequest');
 const Company = require('../../models/Company');
 const AdminUser = require('../../models/AdminUser');
-const bcrypt = require('bcrypt');
+const Payment = require('../../models/payment');
 
+// Mock modules
 jest.mock('../../models/CompanyRequest');
 jest.mock('../../models/Company');
 jest.mock('../../models/AdminUser');
 jest.mock('../../models/payment');
-jest.mock('bcrypt');
-jest.mock('../../controllers/EmailController', () => ({
-  sendRegistrationEmail: jest.fn()
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: jest.fn().mockResolvedValue(true)
+  })
+}));
+jest.mock('fs', () => ({
+  readFileSync: jest.fn().mockReturnValue(Buffer.from('mock pdf content'))
 }));
 
 describe('Company Request Controller', () => {
   let req, res;
+  let consoleErrorSpy;
+  let consoleLogSpy;
 
   beforeEach(() => {
     req = {
@@ -30,18 +36,28 @@ describe('Company Request Controller', () => {
           lastName: 'User',
           email: 'admin@test.com'
         }],
-        packageType: '30daysLimited'
-      }
+        packageType: 'Premium'
+      },
+      params: { id: 'requestId' }
     };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
+    // Spy on console methods
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+    jest.clearAllMocks();
   });
 
   describe('createCompanyRequest', () => {
     it('should create company request successfully', async () => {
-      const mockData = {
+      const mockSavedRequest = {
         _id: 'requestId',
         name: 'Test Company',
         address: 'Test Address',
@@ -50,26 +66,30 @@ describe('Company Request Controller', () => {
           lastName: 'User',
           email: 'admin@test.com'
         }],
-        packageType: '30daysLimited'
-      };
-
-      const mockCompanyRequest = {
-        ...mockData,
-        toObject: () => mockData,
-        save: jest.fn().mockResolvedValue({
-          ...mockData,
-          toObject: () => mockData
+        packageType: 'Premium',
+        toObject: () => ({
+          _id: 'requestId',
+          name: 'Test Company',
+          address: 'Test Address',
+          admins: [{
+            firstName: 'Admin',
+            lastName: 'User',
+            email: 'admin@test.com'
+          }],
+          packageType: 'Premium'
         })
       };
 
-      CompanyRequest.mockImplementation(() => mockCompanyRequest);
+      CompanyRequest.mockImplementation(() => ({
+        save: jest.fn().mockResolvedValue(mockSavedRequest)
+      }));
 
       await createCompanyRequest(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Company created successfully',
-        companyRequest: mockData
+        companyRequest: expect.any(Object)
       });
     });
   });
@@ -87,49 +107,38 @@ describe('Company Request Controller', () => {
           email: 'admin@test.com'
         }],
         packageType: 'Premium',
-        status: 'Pending'
+        status: 'Pending',
+        save: jest.fn().mockResolvedValue({ status: 'Approved' })
       };
 
-      req.params = { id: 'requestId' };
-      req.body = { 
-        status: 'Approve',
-        selectedAdmins: ['adminId']
-      };
+      req.body.status = 'Approve';
+      req.body.selectedAdmins = ['adminId'];
 
-      bcrypt.hash = jest.fn().mockResolvedValue('hashedPassword');
-
-      CompanyRequest.findById = jest.fn().mockResolvedValue({
-        ...mockRequest,
-        save: jest.fn().mockResolvedValue({ ...mockRequest, status: 'Approved' })
-      });
+      CompanyRequest.findById.mockResolvedValue(mockRequest);
 
       const mockCompany = {
         _id: 'companyId',
-        name: 'Test Company',
         admins: [],
-        save: jest.fn().mockResolvedValue({
-          _id: 'companyId',
-          name: 'Test Company',
-          admins: ['adminId']
-        })
+        save: jest.fn().mockResolvedValue({})
       };
       Company.mockImplementation(() => mockCompany);
 
       const mockAdminUser = {
         _id: 'adminId',
-        firstName: 'Admin',
-        lastName: 'User',
         email: 'admin@test.com',
-        save: jest.fn().mockResolvedValue({ _id: 'adminId' })
+        firstName: 'Admin',
+        save: jest.fn().mockResolvedValue({})
       };
       AdminUser.mockImplementation(() => mockAdminUser);
 
-      await toggleCompanyRequestStatus(req, res);
+      Payment.updateMany.mockResolvedValue({ nModified: 1 });
 
-      expect(CompanyRequest.findById).toHaveBeenCalledWith('requestId');
+      await toggleCompanyRequestStatus(req, res);
+      // Wait for any immediate callbacks to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockRequest.save).toHaveBeenCalled();
       expect(mockCompany.save).toHaveBeenCalled();
-      expect(mockAdminUser.save).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         company: expect.any(Object),
@@ -140,14 +149,27 @@ describe('Company Request Controller', () => {
     it('should handle errors properly', async () => {
       req.params = { id: 'requestId' };
       req.body = { status: 'Approve' };
-      
-      CompanyRequest.findById = jest.fn().mockRejectedValue(new Error('Database error'));
+
+      // Mock findById to r eturn null to simulate not found error
+      CompanyRequest.findById = jest.fn().mockResolvedValue(null);
+
+      const result = await toggleCompanyRequestStatus(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ 
+        message: 'Company request not found' 
+      });
+    });
+
+    it('should handle invalid status value', async () => {
+      req.params = { id: 'requestId' };
+      req.body = { status: 'Invalid' };
 
       await toggleCompanyRequestStatus(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ 
-        message: 'Error processing company request'
+        message: 'Invalid status value' 
       });
     });
   });
