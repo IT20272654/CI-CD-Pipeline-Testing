@@ -48,8 +48,10 @@ describe('History Controller', () => {
 
     it('should handle errors properly', async () => {
       const dbError = new Error('Database error');
-      History.find = jest.fn().mockImplementation(() => {
-        throw dbError;
+      History.find = jest.fn().mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        populate: jest.fn().mockRejectedValue(dbError)  // Changed from throw to mockRejectedValue
       });
 
       await getRecentAccessDoors(req, res);
