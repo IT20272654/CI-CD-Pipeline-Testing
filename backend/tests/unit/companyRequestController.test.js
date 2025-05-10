@@ -12,6 +12,8 @@ jest.mock('../../models/CompanyRequest');
 jest.mock('../../models/Company');
 jest.mock('../../models/AdminUser');
 jest.mock('../../models/payment');
+
+// Mock nodemailer and fs
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: jest.fn().mockResolvedValue(true)
@@ -19,6 +21,11 @@ jest.mock('nodemailer', () => ({
 }));
 jest.mock('fs', () => ({
   readFileSync: jest.fn().mockReturnValue(Buffer.from('mock pdf content'))
+}));
+
+// Mock bcrypt for password hashing
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashedPassword123')
 }));
 
 describe('Company Request Controller', () => {

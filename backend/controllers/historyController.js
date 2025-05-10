@@ -19,7 +19,7 @@ const getRecentAccessDoors = async (req, res) => {
     console.log('Fetched recent access doors:', recentAccess); // Log the fetched records
     res.status(200).json(recentAccess);
   } catch (error) {
-    console.log(error);
+    console.error('Error fetching recent access doors:', error);
     res.status(500).json({ error: 'Error fetching recent access doors' });
   }
 };
